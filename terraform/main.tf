@@ -80,12 +80,16 @@ resource "azurerm_subnet" "cluster" {
 
 }
 
+data "azurerm_kubernetes_service_versions" "current" {
+  location = var.location
+}
+
 resource "azurerm_kubernetes_cluster" "aks" {
   name                = local.cluster_name
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
   dns_prefix          = "quackersbank" #local.cluster_name
-  kubernetes_version  = "1.21.2"
+  kubernetes_version  = azurerm_kubernetes_service_versions.current.latest_version
   default_node_pool {
     name            = "default"
     node_count      = 1
@@ -123,7 +127,7 @@ resource "azurerm_kubernetes_cluster" "aks" {
 }
 
 resource "azurerm_container_registry" "acr" {
-  name                = "acr${local.cluster_name}"
+  name                = "acr${replace(local.cluster_name, '-','')}"
   resource_group_name = azurerm_resource_group.rg.name
   location            = azurerm_resource_group.rg.location
   sku                 = "Standard"
